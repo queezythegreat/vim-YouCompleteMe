@@ -85,9 +85,9 @@ LANGUAGE_EXTENSIONS = {
     'c++': ['cpp', 'cc', 'c++', 'hpp', 'hxx', 'tcc', 'txx'],
 }
 
-def script_abspath():
+def script_abspath(filepath=__file__):
     """ Return absolute path of this python module. """
-    return os.path.dirname(os.path.abspath(__file__))
+    return os.path.dirname(os.path.abspath(filepath))
 
 
 def abspath_flags(flags, working_directory):
@@ -103,7 +103,7 @@ def abspath_flags(flags, working_directory):
         if make_next_absolute:
             make_next_absolute = False
             if not flag.startswith( '/' ):
-                new_flag = os.path.join( working_directory, flag )
+                new_flag = os.path.abspath(os.path.join( working_directory, flag ))
 
         for path_flag in path_flags:
             if flag == path_flag:
@@ -134,11 +134,13 @@ def load_database_flags(database, filename):
                                     compiler_info.compiler_working_dir_ )
         return final_flags
 
-def load_user_flags(flags, include_dirs, include_system_dirs):
+def load_user_flags(flags, include_dirs, include_system_dirs, config_path):
     """ Load user compiler flags.
 
         flags               - list of flags
-        include_dirs        - list of include directories (-I) include_system_dirs - list of system include directories (-isystem)
+        include_dirs        - list of include directories (-I)
+        include_system_dirs - list of system include directories (-isystem)
+        config_path         - YCM configuration file path
     """
 
     for path in include_dirs:
@@ -147,7 +149,7 @@ def load_user_flags(flags, include_dirs, include_system_dirs):
     for path in include_system_dirs:
         flags += ['-isystem', path] 
     
-    return abspath_flags(flags, script_abspath())
+    return abspath_flags(flags, script_abspath(config_path))
 
 def load_language_flags(language, standard):
     """ Load flags specifying the compiler language and standard. """
@@ -162,14 +164,14 @@ def load_language_flags(language, standard):
 
     return flags
 
-def flags_loader(database, flags, include_dirs, include_system_dirs, language, language_standard, enable_cache):
+def flags_loader(database, flags, include_dirs, include_system_dirs, language, language_standard, enable_cache, config_path):
     def decorator(func):
         def load_flags(filename):
             """ Load flags for given file. """
             all_flags = load_database_flags(database, filename)
 
             if not all_flags:
-                all_flags = load_user_flags(flags, include_dirs, include_system_dirs)
+                all_flags = load_user_flags(flags, include_dirs, include_system_dirs, config_path)
                 all_flags += load_language_flags(language, language_standard)
 
             result = {
@@ -218,7 +220,7 @@ INCLUDE_SYSTEM_DIRS = [
 ]
 
 
-@flags_loader(DATABASE, FLAGS, INCLUDE_DIRS, INCLUDE_SYSTEM_DIRS, LANGUAGE, LANGUAGE_STANDARD, ENABLE_CACHE)
+@flags_loader(DATABASE, FLAGS, INCLUDE_DIRS, INCLUDE_SYSTEM_DIRS, LANGUAGE, LANGUAGE_STANDARD, ENABLE_CACHE, __file__)
 def FlagsForFile(filename, result, *kwargs):
     # Custom flag handling here...
     return result
