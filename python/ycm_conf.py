@@ -208,7 +208,6 @@ LANGUAGE_STANDARD = ''
 # Relative paths from this file, uses the `-I` compiler flag
 INCLUDE_DIRS = [
     os.path.abspath('.'),
-    '.',
 ]
 
 ENABLE_CACHE = True
