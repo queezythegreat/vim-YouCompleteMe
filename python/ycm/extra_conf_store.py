@@ -29,7 +29,9 @@ from ycm import vimsupport
 from fnmatch import fnmatch
 
 # Constants
-YCM_EXTRA_CONF_FILENAME = '.ycm_extra_conf.py'
+YCM_EXTRA_CONF_FILENAME = os.path.expanduser(
+    vimsupport.GetVariableValue("g:ycm_ycm_extra_conf_name")
+)
 CONFIRM_CONF_FILE_MESSAGE = ('Found {0}. Load? \n\n(Question can be turned '
                              'off with options, see YCM docs)')
 GLOBAL_YCM_EXTRA_CONF_FILE = os.path.expanduser(

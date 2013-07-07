@@ -1,3 +1,6 @@
+# build directory
+cpp/build
+
 # Compiled Object files
 *.slo
 *.lo

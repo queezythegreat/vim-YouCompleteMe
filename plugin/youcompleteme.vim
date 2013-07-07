@@ -134,6 +134,9 @@ let g:ycm_key_detailed_diagnostics =
 let g:ycm_global_ycm_extra_conf =
       \ get( g:, 'ycm_global_ycm_extra_conf', '' )
 
+let g:ycm_ycm_extra_conf_name =
+      \ get( g:, 'ycm_ycm_extra_conf_name', '.ycm_extra_conf.py' )
+
 let g:ycm_confirm_extra_conf =
       \ get( g:, 'ycm_confirm_extra_conf', 1 )
 
