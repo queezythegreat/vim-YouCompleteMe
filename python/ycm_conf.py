@@ -189,7 +189,7 @@ def flags_loader(database, flags, include_dirs, include_system_dirs, language, l
 FLAGS = [
     '-Wall',
     '-Wextra',
-    '-Werror',
+#    '-Werror',
     '-Wc++98-compat',
     '-Wno-long-long',
     '-Wno-variadic-macros',
