@@ -29,6 +29,8 @@
 # For more information, please refer to <http://unlicense.org/>
 
 import os
+import glob
+import inspect
 import ycm_core
 
 
@@ -164,7 +166,35 @@ def load_language_flags(language, standard):
 
     return flags
 
-def flags_loader(database, flags, include_dirs, include_system_dirs, language, language_standard, enable_cache, config_path):
+def glob_dirs(path_globs):
+    all_paths = []
+    for path_glob in path_globs:
+        all_paths += [p for p in glob.glob(path_glob) if os.path.isdir(p)]
+    return all_paths
+
+def caller_scope():
+    """ Get function caller environment locals. """
+    stack = inspect.stack()
+    try:
+        return stack[2][0].f_locals
+    finally:
+        del stack
+
+def flags_loader(*args, **kwargs):
+    caller = caller_scope()
+
+    database = caller.get('DATABASE', DATABASE)
+    flags = caller.get('FLAGS', FLAGS)
+    include_dirs = caller.get('INCLUDE_DIRS', INCLUDE_DIRS)
+    include_system_dirs = caller.get('INCLUDE_SYSTEM_DIRS', INCLUDE_SYSTEM_DIRS)
+
+    language = caller.get('LANGUAGE', LANGUAGE)
+    language_standard = caller.get('LANGUAGE_STANDARD', LANGUAGE_STANDARD)
+    enable_cache = caller.get('ENABLE_CACHE', ENABLE_CACHE)
+    config_path = caller.get('__file__', __file__)
+
+    include_dirs = glob_dirs(include_dirs)
+    include_system_dirs = glob_dirs(include_system_dirs)
     def decorator(func):
         def load_flags(filename):
             """ Load flags for given file. """
@@ -219,7 +249,7 @@ INCLUDE_SYSTEM_DIRS = [
 ]
 
 
-@flags_loader(DATABASE, FLAGS, INCLUDE_DIRS, INCLUDE_SYSTEM_DIRS, LANGUAGE, LANGUAGE_STANDARD, ENABLE_CACHE, __file__)
+@flags_loader()
 def FlagsForFile(filename, result, *kwargs):
     # Custom flag handling here...
     return result
