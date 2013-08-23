@@ -28,6 +28,10 @@ if ( ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD" )
   set( SYSTEM_IS_FREEBSD true )
 endif()
 
+if ( ${CMAKE_SYSTEM_NAME} MATCHES "SunOS" )
+  set( SYSTEM_IS_SUNOS true )
+endif()
+
 # Check if platform is 64 bit
 if( CMAKE_SIZEOF_VOID_P EQUAL 4 )
   set( 64_BIT_PLATFORM 0 )
@@ -99,7 +103,13 @@ endif()
 # too. Sadly there's no way around the warning.
 if ( CPP11_AVAILABLE )
   message( "Your C++ compiler supports C++11, compiling in that mode." )
-  set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
+
+  # Cygwin needs its hand held a bit; see issue #473
+  if ( CYGWIN AND CMAKE_COMPILER_IS_GNUCXX )
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++0x" )
+  else()
+    set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x" )
+  endif()
 else()
   message(
     "Your C++ compiler does NOT support C++11, compiling in C++03 mode." )

@@ -21,13 +21,11 @@ set cpo&vim
 
 if exists( "g:loaded_youcompleteme" )
   finish
-elseif v:version < 704
-  if v:version < 703 || !has( 'patch584' )
-    echohl WarningMsg |
-          \ echomsg "YouCompleteMe unavailable: requires Vim 7.3.584+" |
-          \ echohl None
-    finish
-  endif
+elseif v:version < 703 || (v:version == 703 && !has('patch584'))
+  echohl WarningMsg |
+        \ echomsg "YouCompleteMe unavailable: requires Vim 7.3.584+" |
+        \ echohl None
+  finish
 elseif !has( 'python' )
   echohl WarningMsg |
         \ echomsg "YouCompleteMe unavailable: requires python 2.x" |
@@ -81,6 +79,8 @@ let g:ycm_filetype_blacklist =
       \     'notes' : 1,
       \     'markdown' : 1,
       \     'text' : 1,
+      \     'unite' : 1,
+      \     'tagbar' : 1,
       \ } ) )
 
 let g:ycm_filetype_specific_completion_to_disable =
@@ -153,6 +153,15 @@ let g:ycm_semantic_triggers =
 
 let g:ycm_cache_omnifunc =
       \ get( g:, 'ycm_cache_omnifunc', 1 )
+
+let g:ycm_auto_start_csharp_server =
+      \ get( g:, 'ycm_auto_start_csharp_server', 1 )
+
+let g:ycm_auto_stop_csharp_server =
+            \ get( g:, 'ycm_auto_stop_csharp_server', 1 )
+
+let g:ycm_csharp_server_port =
+      \ get( g:, 'ycm_csharp_server_port', 2000 )
 
 " On-demand loading. Let's use the autoload folder and not slow down vim's
 " startup procedure.
