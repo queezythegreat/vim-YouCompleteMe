@@ -89,8 +89,9 @@ local binary folder (for example `/usr/local/bin/mvim`) and then symlink it:
 Install YouCompleteMe with [Vundle][].
 
 **Remember:** YCM is a plugin with a compiled component. If you **update** YCM
-using Vundle and the ycm_core library API has changed (happens rarely), YCM will
-notify you to recompile it. You should then rerun the install process.
+using Vundle and the ycm_support_libs library APIs have changed (happens
+rarely), YCM will notify you to recompile it. You should then rerun the install
+process.
 
 It's recommended that you have the latest Xcode installed along with the latest
 Command Line Tools (that you install from within Xcode).
@@ -136,8 +137,9 @@ from source][vim-build] (don't worry, it's easy).
 Install YouCompleteMe with [Vundle][].
 
 **Remember:** YCM is a plugin with a compiled component. If you **update** YCM
-using Vundle and the ycm_core library API has changed (happens rarely), YCM will
-notify you to recompile it. You should then rerun the install process.
+using Vundle and the ycm_support_libs library APIs have changed (happens
+rarely), YCM will notify you to recompile it. You should then rerun the install
+process.
 
 Install development tools and CMake: `sudo apt-get install build-essential cmake`
 
@@ -184,8 +186,9 @@ that platform).
 See the _FAQ_ if you have any issues.
 
 **Remember:** YCM is a plugin with a compiled component. If you **update** YCM
-using Vundle and the ycm_core library API has changed (happens rarely), YCM will
-notify you to recompile it. You should then rerun the install process.
+using Vundle and the ycm_support_libs library APIs have changed (happens
+rarely), YCM will notify you to recompile it. You should then rerun the install
+process.
 
 **Please follow the instructions carefully. Read EVERY WORD.**
 
@@ -207,6 +210,10 @@ notify you to recompile it. You should then rerun the install process.
     idea). With Vundle, this would mean adding a `Bundle
     'Valloric/YouCompleteMe'` line to your [vimrc][].
 
+    If you don't install YCM with Vundle, make sure you have run
+    `git submodule update --init --recursive` after checking out the YCM
+    repository (Vundle will do this for you) to fetch YCM's dependencies.
+
 3.  [Complete this step ONLY if you care about semantic completion support for
     C-family languages. Otherwise it's not neccessary.]
 
@@ -221,8 +228,8 @@ notify you to recompile it. You should then rerun the install process.
     binaries from llvm.org][clang-download] if at all possible. Make sure you
     download the correct archive file for your OS.
 
-4.  **Compile the `ycm_core` plugin plugin** (ha!) that YCM needs. This is the
-    C++ engine that YCM uses to get fast completions.
+4.  **Compile the `ycm_support_libs` libraries** that YCM needs. These libs
+    are the C++ engines that YCM uses to get fast completions.
 
     You will need to have `cmake` installed in order to generate the required
     makefiles. Linux users can install cmake with their package manager (`sudo
@@ -261,7 +268,7 @@ notify you to recompile it. You should then rerun the install process.
 
     Now that makefiles have been generated, simply run:
 
-        make ycm_core
+        make ycm_support_libs
 
     For those who want to use the system version of libclang, you would pass
     `-DUSE_SYSTEM_LIBCLANG=ON` to cmake _instead of_ the
@@ -322,6 +329,13 @@ filepath completer.
 YCM automatically detects which completion engine would be the best in any
 situation. On occasion, it queries several of them at once, merges the
 outputs and presents the results to you.
+
+### Client-server architecture
+
+YCM has a client-server architecture; the Vim part of YCM is only a thin client
+that talks to the `ycmd` HTTP+JSON server that has the vast majority of YCM
+logic and functionality. The server is started and stopped automatically as you
+start and stop Vim.
 
 ### Completion string ranking
 
@@ -498,6 +512,11 @@ yours truly.
 Commands
 --------
 
+### The `:YcmRestartServer` command
+
+If the `ycmd` completion server suddenly stops for some reason, you can restart
+it with this command.
+
 ### The `:YcmForceCompileAndDiagnostics` command
 
 Calling this command will force YCM to immediately recompile your file
@@ -659,6 +678,21 @@ Default: `0`
 
     let g:ycm_min_num_identifier_candidate_chars = 0
 
+### The `g:ycm_auto_trigger` option
+
+When set to `0`, this option turns off YCM's identifier completer (the
+as-you-type popup) _and_ the semantic triggers (the popup you'd get after typing
+`.` or `->` in say C++). The Syntastic integration remains working and you can
+still force semantic completion with the `<C-Space>` shortcut.
+
+If you want to just turn off the identifier completer but keep the semantic
+triggers, you should set `g:ycm_min_num_of_chars_for_completion` to a high
+number like `99`.
+
+Default: `1`
+
+    let g:ycm_auto_trigger = 1
+
 ### The `g:ycm_filetype_whitelist` option
 
 This option controls for which Vim filetypes (see `:h filetype`) should YCM be
@@ -698,13 +732,16 @@ is used like a hash set, meaning that only the keys matter).
 
 See the `g:ycm_filetype_whitelist` option for more details on how this works.
 
-Default: `{'notes': 1, 'markdown': 1, 'text': 1}`
+Default: `[see next line]`
 
     let g:ycm_filetype_blacklist = {
+          \ 'tagbar' : 1,
+          \ 'qf' : 1,
           \ 'notes' : 1,
           \ 'markdown' : 1,
-          \ 'text' : 1,
           \ 'unite' : 1,
+          \ 'text' : 1,
+          \ 'vimwiki' : 1,
           \}
 
 ### The `g:ycm_filetype_specific_completion_to_disable` option
@@ -831,6 +868,90 @@ Usually at least 95% of the keywords are successfully extracted.
 Default: `0`
 
     let g:ycm_seed_identifiers_with_syntax = 0
+
+### The `g:ycm_extra_conf_vim_data` option
+
+If you're using semantic completion for C-family files, this option might come
+handy; it's a way of sending data from Vim to your `FlagsForFile` function in
+your `.ycm_extra_conf.py` file.
+
+This option is supposed to be a list of VimScript expression strings that are
+evaluated for every request to the `ycmd` server and then passed to your
+`FlagsForFile` function as a `client_data` keyword argument.
+
+For instance, if you set this option to `['v:version']`, your `FlagsForFile`
+function will be called like this:
+
+```python
+# The '704' value is of course contingent on Vim 7.4; in 7.3 it would be '703'
+FlagsForFile(filename, client_data = {'v:version': 704})
+```
+
+So the `client_data` parameter is a dictionary mapping Vim expression strings to
+their values at the time of the request.
+
+The correct way to define parameters for your `FlagsForFile` function:
+
+```python
+def FlagsForFile(filename, **kwargs):
+```
+
+You can then get to `client_data` with `kwargs['client_data']`.
+
+Default: `[]`
+
+    let g:ycm_extra_conf_vim_data = []
+
+### The `g:ycm_path_to_python_interpreter` option
+
+YCM will by default search for an appropriate Python interpreter on your system.
+You can use this option to override that behavior and force the use of a
+specific interpreter of your choosing.
+
+NOTE: This interpreter is only used for the `ycmd` server. The YCM client
+running inside Vim always uses the Python interpreter that's embedded inside
+Vim.
+
+Default: `''`
+
+    let g:ycm_path_to_python_interpreter = ''
+
+### The `g:ycm_server_use_vim_stdout` option
+
+By default, the `ycmd` completion server writes logs to logfiles. When this
+option is set to `1`, the server writes logs to Vim's stdout (so you'll see them
+in the console).
+
+Default: `0`
+
+    let g:ycm_server_use_vim_stdout = 0
+
+### The `g:ycm_server_keep_logfiles` option
+
+When this option is set to `1`, the `ycmd` completion server will keep the
+logfiles around after shutting down (they are deleted on shutdown by default).
+
+To see where the logfiles are, call `:YcmDebugInfo`.
+
+Default: `0`
+
+    let g:ycm_server_keep_logfiles = 0
+
+### The `g:ycm_server_log_level` option
+
+The logging level that the `ycmd` completion server uses. Valid values are the
+following, from most verbose to least verbose:
+- `debug`
+- `info`
+- `warning`
+- `error`
+- `critical`
+
+Note that `debug` is _very_ verbose.
+
+Default: `info`
+
+    let g:ycm_server_log_level = 'info'
 
 ### The `g:ycm_csharp_server_port` option
 
@@ -1082,8 +1203,36 @@ Default: `1`
 
     let g:ycm_cache_omnifunc = 1
 
+### The `g:ycm_use_ultisnips_completer` option
+
+By default, YCM will query the UltiSnips plugin for possible completions of
+snippet triggers. This option can turn that behavior off.
+
+Default: `1`
+
+    let g:ycm_use_ultisnips_completer = 1
+
 FAQ
 ---
+
+### I used to be able to `import vim` in `.ycm_extra_conf.py`, but now can't
+
+YCM was rewritten to use a client-server architecture where most of the logic is
+in the `ycmd` server. So the magic `vim` module you could have previously
+imported in your `.ycm_extra_conf.py` files doesn't exist anymore.
+
+To be fair, importing the magic `vim` module in extra conf files was never
+supported in the first place; it only ever worked by accident and was never a
+part of the extra conf API.
+
+But fear not, you should be able to tweak your extra conf files to continue
+working by using the `g:ycm_extra_conf_vim_data` option. See the docs on that
+option for details.
+
+### On very rare occasions Vim crashes when I tab through the completion menu
+
+That's a very rare Vim bug most users never encounter. It's fixed in Vim
+7.4.72. Update to that version (or above) to resolve the issue.
 
 ### I get a linker warning regarding `libpython` on Mac when compiling YCM
 
@@ -1347,6 +1496,26 @@ If you have questions about the plugin or need help, please use the
 [ycm-users][] mailing list, _don't_ create issues on the tracker. The tracker is
 for bug reports and feature requests.
 
+### I get an internal compiler error when installing
+
+This can be a problem on virtual servers with limited memory. A possible
+solution is to add more swap memory.
+
+### Completion doesn't work with the C++ standard library headers
+
+This is caused by an issue with libclang. Compiling from `clang` the binary uses
+the correct default header search paths but compiling from `libclang.so` does
+not. The issue seems to impact some OS's more than others. It appears that OS X
+Mavericks in particular has problems with this.
+
+The current workaround is to call `echo | clang -v -E -x c++ -` and look at the
+paths under the `#include <...> search starts here:` heading. You should take
+those paths, prepend `-isystem` to each individual path and append them all to
+the list of flags you return from your `FlagsForFile` function in your
+`.ycm_extra_conf.py` file.
+
+See [issue #303][issue-303] for details.
+
 Contact
 -------
 
@@ -1367,6 +1536,7 @@ License
 This software is licensed under the [GPL v3 license][gpl].
 © 2012 Strahinja Val Markovic &lt;<val@markovic.io>&gt;.
 
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/Valloric/youcompleteme/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 [Clang]: http://clang.llvm.org/
 [vundle]: https://github.com/gmarik/vundle#about
@@ -1397,3 +1567,4 @@ This software is licensed under the [GPL v3 license][gpl].
 [vundle-bug]: https://github.com/gmarik/vundle/issues/48
 [ycm-users]: https://groups.google.com/forum/?hl=en#!forum/ycm-users
 [omnisharp]: https://github.com/nosami/OmniSharpServer
+[issue-303]: https://github.com/Valloric/YouCompleteMe/issues/303
